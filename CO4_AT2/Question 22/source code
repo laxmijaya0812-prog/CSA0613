@@ -1,0 +1,100 @@
+# Ride-Sharing Matching System Optimization
+# Bipartite Graph Matching using DFS
+# Course: Design and Analysis of Algorithms
+# Assessment: CO4_AT2
+
+
+def bpm(driver, graph, visited, match):
+    """
+    Finds a possible passenger match for a driver
+    using Depth First Search.
+    """
+
+    # Check every passenger
+    for passenger in range(len(graph[driver])):
+
+        # Check if driver can serve passenger and passenger is not visited
+        if graph[driver][passenger] == 1 and not visited[passenger]:
+
+            visited[passenger] = True
+
+            # If passenger is not assigned to any driver
+            # OR the previously assigned driver can be reassigned
+            if match[passenger] == -1 or bpm(
+                match[passenger], graph, visited, match
+            ):
+
+                match[passenger] = driver
+                return True
+
+    return False
+
+
+def maximum_matching(graph):
+    """
+    Finds the maximum number of driver-passenger matches.
+    """
+
+    num_drivers = len(graph)
+    num_passengers = len(graph[0])
+
+    # Stores assigned driver for each passenger
+    match = [-1] * num_passengers
+
+    max_matches = 0
+
+    # Try matching every driver
+    for driver in range(num_drivers):
+
+        # Reset visited passengers for each driver
+        visited = [False] * num_passengers
+
+        # Find a match
+        if bpm(driver, graph, visited, match):
+            max_matches += 1
+
+    return max_matches, match
+
+
+# ------------------------------------------------
+# Driver-Passenger Matching Graph
+# ------------------------------------------------
+
+# Rows = Drivers
+# Columns = Passengers
+#
+# 1 = Valid match possible
+# 0 = Match not possible
+
+graph = [
+    [1, 1, 0],   # Driver D1 can serve P1 and P2
+    [0, 1, 1],   # Driver D2 can serve P2 and P3
+    [1, 0, 1]    # Driver D3 can serve P1 and P3
+]
+
+# Driver names
+drivers = ["D1", "D2", "D3"]
+
+# Passenger names
+passengers = ["P1", "P2", "P3"]
+
+
+# Find maximum matching
+max_matches, match = maximum_matching(graph)
+
+
+# ------------------------------------------------
+# Display Results
+# ------------------------------------------------
+
+print("RIDE-SHARING MATCHING SYSTEM")
+print("-" * 35)
+
+print("\nDriver-Passenger Assignments:")
+
+for passenger in range(len(passengers)):
+    if match[passenger] != -1:
+        driver = match[passenger]
+        print(drivers[driver], "->", passengers[passenger])
+
+print("\nMaximum Number of Matches =", max_matches)
