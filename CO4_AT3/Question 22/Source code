@@ -1,0 +1,102 @@
+# Principle of Optimality vs Greedy Choice Property
+# Resource Allocation using 0/1 Knapsack
+# Course: Design and Analysis of Algorithms
+# Assessment: CO4_AT3
+
+
+# -------------------------------------------------
+# Dynamic Programming Approach
+# Principle of Optimality
+# -------------------------------------------------
+
+def knapsack_dp(weights, profits, capacity):
+    n = len(weights)
+
+    # Create DP table
+    dp = [[0 for _ in range(capacity + 1)]
+          for _ in range(n + 1)]
+
+    # Fill the DP table
+    for i in range(1, n + 1):
+        for w in range(capacity + 1):
+
+            if weights[i - 1] <= w:
+                dp[i][w] = max(
+                    profits[i - 1] + dp[i - 1][w - weights[i - 1]],
+                    dp[i - 1][w]
+                )
+            else:
+                dp[i][w] = dp[i - 1][w]
+
+    return dp[n][capacity]
+
+
+# -------------------------------------------------
+# Greedy Approach
+# Greedy Choice Property
+# -------------------------------------------------
+
+def knapsack_greedy(weights, profits, capacity):
+    n = len(weights)
+
+    # Create items with profit/weight ratio
+    items = []
+
+    for i in range(n):
+        ratio = profits[i] / weights[i]
+        items.append((ratio, weights[i], profits[i]))
+
+    # Sort based on highest profit-to-weight ratio
+    items.sort(reverse=True)
+
+    total_profit = 0
+    remaining_capacity = capacity
+
+    # Select items greedily
+    for ratio, weight, profit in items:
+
+        if weight <= remaining_capacity:
+            remaining_capacity -= weight
+            total_profit += profit
+
+    return total_profit
+
+
+# -------------------------------------------------
+# Main Program
+# -------------------------------------------------
+
+weights = [10, 20, 30]
+profits = [60, 100, 120]
+capacity = 50
+
+print("RESOURCE ALLOCATION PROBLEM")
+print("-" * 40)
+
+print("Weights:", weights)
+print("Profits:", profits)
+print("Resource Capacity:", capacity)
+
+# Dynamic Programming Result
+dp_result = knapsack_dp(weights, profits, capacity)
+
+# Greedy Result
+greedy_result = knapsack_greedy(
+    weights, profits, capacity
+)
+
+print("\nDYNAMIC PROGRAMMING")
+print("Maximum Profit =", dp_result)
+
+print("\nGREEDY APPROACH")
+print("Maximum Profit =", greedy_result)
+
+print("\nCOMPARISON")
+
+if dp_result > greedy_result:
+    print("Dynamic Programming gives the optimal solution.")
+    print("Greedy approach fails to achieve the global optimum.")
+elif dp_result == greedy_result:
+    print("Both approaches produce the optimal solution.")
+else:
+    print("Greedy approach gives a better result.")
