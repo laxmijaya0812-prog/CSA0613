@@ -1,0 +1,83 @@
+# Graph Partition Problem using Backtracking
+# Course: Design and Analysis of Algorithms
+# Assessment: CO5_AT2
+
+
+def graph_partition(graph):
+    # Find number of vertices
+    n = len(graph)
+
+    # Equal partition is possible only when number of vertices is even
+    if n % 2 != 0:
+        print("Equal partition is not possible for an odd number of vertices.")
+        return []
+
+    # Required number of vertices in each set
+    target = n // 2
+
+    # Two partitions
+    set_a = []
+    set_b = []
+
+    # Store valid solutions
+    solutions = []
+
+    # Backtracking function
+    def backtrack(vertex):
+
+        # Pruning: stop if any set exceeds the required size
+        if len(set_a) > target or len(set_b) > target:
+            return
+
+        # Base case: all vertices have been assigned
+        if vertex == n:
+            if len(set_a) == target and len(set_b) == target:
+                solutions.append((set_a.copy(), set_b.copy()))
+            return
+
+        # Try assigning the current vertex to Set A
+        if len(set_a) < target:
+            set_a.append(vertex)
+            backtrack(vertex + 1)
+            set_a.pop()  # Backtrack
+
+        # Try assigning the current vertex to Set B
+        if len(set_b) < target:
+            set_b.append(vertex)
+            backtrack(vertex + 1)
+            set_b.pop()  # Backtrack
+
+    # Start backtracking from vertex 0
+    backtrack(0)
+
+    return solutions
+
+
+# Graph represented using an adjacency matrix
+graph = [
+    [0, 1, 1, 0],
+    [1, 0, 1, 1],
+    [1, 1, 0, 1],
+    [0, 1, 1, 0]
+]
+
+
+# Find graph partitions
+solutions = graph_partition(graph)
+
+
+# Display results
+print("GRAPH PARTITION USING BACKTRACKING")
+print("-" * 40)
+
+if solutions:
+    # Display the first valid partition
+    set_a, set_b = solutions[0]
+
+    print("Set A:", set_a)
+    print("Set B:", set_b)
+    print("Both sets contain equal number of vertices.")
+    print("Total valid partitions found:", len(solutions))
+
+else:
+    print("No valid equal partition found.")
