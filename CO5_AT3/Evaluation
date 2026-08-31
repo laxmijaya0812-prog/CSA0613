@@ -1,0 +1,12 @@
+| Question | Topic                          | Performance |
+| -------- | ------------------------------ | ----------- |
+| Q1       | Backtracking fundamentals      | Very Good   |
+| Q2       | State-space tree               | Very Good   |
+| Q3       | Pruning, promising & bounding  | Good        |
+| Q4       | Subset Sum                     | Excellent   |
+| Q5       | Graph Coloring                 | Excellent   |
+| Q6       | Hamiltonian Cycle              | Excellent   |
+| Q7       | P, NP, NP-Hard, NP-Complete    | Excellent   |
+| Q8       | Polynomial-time reduction      | Excellent   |
+| Q9       | Exact vs Approximation         | Very Good   |
+| Q10      | Real-world algorithm selection | Excellent   |
