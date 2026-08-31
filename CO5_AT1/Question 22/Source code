@@ -1,0 +1,94 @@
+# Exact Cover Problem using Backtracking
+# Course: Design and Analysis of Algorithms
+
+
+def exact_cover(universe, subsets):
+    """
+    Finds a selection of subsets such that every element
+    in the universe is covered exactly once.
+    """
+
+    solution = []
+
+    def backtrack(covered, remaining_subsets):
+        # Base case: all elements are covered exactly once
+        if covered == universe:
+            return True
+
+        # Choose an uncovered element
+        uncovered = universe - covered
+        element = next(iter(uncovered))
+
+        # Try only subsets containing the selected uncovered element
+        for i, subset in enumerate(remaining_subsets):
+
+            # Pruning:
+            # Skip subsets that overlap with already covered elements
+            if element in subset and not (subset & covered):
+
+                solution.append(subset)
+
+                # Recursive call with newly covered elements
+                if backtrack(
+                    covered | subset,
+                    remaining_subsets[i + 1:]
+                ):
+                    return True
+
+                # Backtrack
+                solution.pop()
+
+        return False
+
+    if backtrack(set(), subsets):
+        return solution
+
+    return None
+
+
+# -------------------------------------------------
+# Input
+# -------------------------------------------------
+
+universe = {1, 2, 3, 4, 5}
+
+subsets = [
+    {1, 2},
+    {2, 3},
+    {3},
+    {4, 5},
+    {1, 4},
+    {5}
+]
+
+
+# -------------------------------------------------
+# Execute Exact Cover Algorithm
+# -------------------------------------------------
+
+result = exact_cover(universe, subsets)
+
+
+# -------------------------------------------------
+# Display Result
+# -------------------------------------------------
+
+print("EXACT COVER PROBLEM USING BACKTRACKING")
+print("-" * 45)
+
+print("Universe:", universe)
+
+print("\nAvailable Subsets:")
+for i, subset in enumerate(subsets, start=1):
+    print(f"S{i} =", subset)
+
+if result:
+    print("\nExact Cover Found:")
+
+    for subset in result:
+        print(subset)
+
+    print("\nAll elements are covered exactly once.")
+
+else:
+    print("\nNo Exact Cover exists.")
