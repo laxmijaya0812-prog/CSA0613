@@ -1,0 +1,713 @@
+1. app.py
+from flask import Flask, render_template, request, jsonify
+from algorithms.route_optimizer import nearest_neighbor_route
+from algorithms.vehicle_allocator import allocate_vehicles
+from algorithms.cargo_optimizer import knapsack_optimization
+from algorithms.scheduler import priority_schedule
+import time
+
+app = Flask(__name__)
+
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
+@app.route("/optimize", methods=["POST"])
+def optimize():
+
+    data = request.get_json()
+
+    locations = data.get("locations", [])
+    vehicles = data.get("vehicles", [])
+    cargo = data.get("cargo", [])
+    capacity = data.get("capacity", 100)
+
+    start_time = time.time()
+
+    # Route Optimization
+    route_result = nearest_neighbor_route(locations)
+
+    # Vehicle Allocation
+    vehicle_result = allocate_vehicles(vehicles, cargo)
+
+    # Cargo Optimization
+    cargo_result = knapsack_optimization(cargo, capacity)
+
+    # Delivery Scheduling
+    schedule_result = priority_schedule(cargo)
+
+    end_time = time.time()
+
+    execution_time = round((end_time - start_time) * 1000, 4)
+
+    return jsonify({
+        "route": route_result,
+        "vehicle_allocation": vehicle_result,
+        "cargo_optimization": cargo_result,
+        "schedule": schedule_result,
+        "execution_time_ms": execution_time
+    })
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+2. algorithms/__init__.py
+# Algorithm package
+3. algorithms/route_optimizer.py
+
+This uses the Nearest Neighbor Greedy Algorithm.
+
+import math
+
+
+def distance(a, b):
+
+    return math.sqrt(
+        (a["x"] - b["x"]) ** 2 +
+        (a["y"] - b["y"]) ** 2
+    )
+
+
+def nearest_neighbor_route(locations):
+
+    if not locations:
+        return {
+            "route": [],
+            "total_distance": 0
+        }
+
+    unvisited = locations.copy()
+
+    current = unvisited.pop(0)
+
+    route = [current["name"]]
+
+    total_distance = 0
+
+    while unvisited:
+
+        nearest = min(
+            unvisited,
+            key=lambda location: distance(current, location)
+        )
+
+        total_distance += distance(current, nearest)
+
+        current = nearest
+
+        route.append(current["name"])
+
+        unvisited.remove(current)
+
+    return {
+        "route": route,
+        "total_distance": round(total_distance, 2)
+    }
+4. algorithms/vehicle_allocator.py
+
+This uses a Greedy Allocation Algorithm.
+
+def allocate_vehicles(vehicles, cargo):
+
+    if not vehicles:
+        return {
+            "allocations": [],
+            "unallocated_cargo": len(cargo)
+        }
+
+    sorted_vehicles = sorted(
+        vehicles,
+        key=lambda x: x["capacity"],
+        reverse=True
+    )
+
+    sorted_cargo = sorted(
+        cargo,
+        key=lambda x: x["weight"],
+        reverse=True
+    )
+
+    allocations = []
+
+    remaining_cargo = []
+
+    for item in sorted_cargo:
+
+        allocated = False
+
+        for vehicle in sorted_vehicles:
+
+            if vehicle["capacity"] >= item["weight"]:
+
+                allocations.append({
+                    "cargo": item["name"],
+                    "vehicle": vehicle["name"],
+                    "weight": item["weight"]
+                })
+
+                vehicle["capacity"] -= item["weight"]
+
+                allocated = True
+
+                break
+
+        if not allocated:
+            remaining_cargo.append(item["name"])
+
+    return {
+        "allocations": allocations,
+        "unallocated_cargo": remaining_cargo
+    }
+5. algorithms/cargo_optimizer.py
+
+This uses Dynamic Programming – 0/1 Knapsack Algorithm.
+
+def knapsack_optimization(cargo, capacity):
+
+    n = len(cargo)
+
+    if n == 0:
+        return {
+            "selected_cargo": [],
+            "maximum_value": 0,
+            "total_weight": 0
+        }
+
+    dp = [[0 for _ in range(capacity + 1)]
+          for _ in range(n + 1)]
+
+    for i in range(1, n + 1):
+
+        weight = int(cargo[i - 1]["weight"])
+        value = int(cargo[i - 1]["priority"])
+
+        for w in range(capacity + 1):
+
+            if weight <= w:
+
+                dp[i][w] = max(
+                    value + dp[i - 1][w - weight],
+                    dp[i - 1][w]
+                )
+
+            else:
+                dp[i][w] = dp[i - 1][w]
+
+    selected = []
+
+    w = capacity
+
+    for i in range(n, 0, -1):
+
+        if dp[i][w] != dp[i - 1][w]:
+
+            selected.append(cargo[i - 1])
+
+            w -= int(cargo[i - 1]["weight"])
+
+    selected.reverse()
+
+    total_weight = sum(item["weight"] for item in selected)
+
+    return {
+        "selected_cargo": [item["name"] for item in selected],
+        "maximum_value": dp[n][capacity],
+        "total_weight": total_weight
+    }
+6. algorithms/scheduler.py
+
+Priority-based scheduling using sorting.
+
+def priority_schedule(cargo):
+
+    sorted_cargo = sorted(
+        cargo,
+        key=lambda x: x["priority"],
+        reverse=True
+    )
+
+    schedule = []
+
+    position = 1
+
+    for item in sorted_cargo:
+
+        schedule.append({
+            "order": position,
+            "cargo": item["name"],
+            "priority": item["priority"]
+        })
+
+        position += 1
+
+    return schedule
+7. templates/index.html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Logistics Resource Optimization</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+
+        <h1>Intelligent Logistics Resource Optimization</h1>
+
+        <p>
+            Algorithmic Solution for Large-Scale Logistics
+            Resource Optimization
+        </p>
+
+    </header>
+
+
+    <section class="dashboard">
+
+        <div class="card">
+
+            <h2>Optimization Control Panel</h2>
+
+            <button onclick="runOptimization()">
+                Run Optimization
+            </button>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>Optimized Route</h2>
+
+            <div id="route">
+                Waiting for optimization...
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>Vehicle Allocation</h2>
+
+            <div id="vehicles">
+                Waiting for optimization...
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>Cargo Optimization</h2>
+
+            <div id="cargo">
+                Waiting for optimization...
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>Priority Schedule</h2>
+
+            <div id="schedule">
+                Waiting for optimization...
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>System Performance</h2>
+
+            <div id="performance">
+                Waiting for optimization...
+            </div>
+
+        </div>
+
+    </section>
+
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+
+</html>
+8. static/style.css
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+
+    font-family: Arial, sans-serif;
+
+    background: linear-gradient(
+        135deg,
+        #0f172a,
+        #1e293b,
+        #334155
+    );
+
+    color: white;
+
+    min-height: 100vh;
+
+}
+
+.container {
+
+    width: 90%;
+
+    margin: auto;
+
+    padding: 30px;
+
+}
+
+header {
+
+    text-align: center;
+
+    margin-bottom: 40px;
+
+}
+
+header h1 {
+
+    font-size: 32px;
+
+    margin-bottom: 10px;
+
+}
+
+header p {
+
+    color: #cbd5e1;
+
+}
+
+.dashboard {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(300px, 1fr));
+
+    gap: 20px;
+
+}
+
+.card {
+
+    background: rgba(255,255,255,0.08);
+
+    border: 1px solid rgba(255,255,255,0.15);
+
+    border-radius: 15px;
+
+    padding: 25px;
+
+    backdrop-filter: blur(10px);
+
+    transition: 0.3s;
+
+}
+
+.card:hover {
+
+    transform: translateY(-5px);
+
+}
+
+.card h2 {
+
+    margin-bottom: 15px;
+
+    color: #38bdf8;
+
+}
+
+button {
+
+    background: #38bdf8;
+
+    border: none;
+
+    padding: 12px 25px;
+
+    border-radius: 8px;
+
+    font-size: 16px;
+
+    cursor: pointer;
+
+    color: #0f172a;
+
+    font-weight: bold;
+
+}
+
+button:hover {
+
+    background: #7dd3fc;
+
+}
+
+.result-item {
+
+    background: rgba(255,255,255,0.08);
+
+    padding: 10px;
+
+    margin-top: 8px;
+
+    border-radius: 6px;
+
+}
+9. static/script.js
+async function runOptimization() {
+
+    const data = {
+
+        locations: [
+            { name: "Warehouse", x: 0, y: 0 },
+            { name: "Chennai", x: 4, y: 7 },
+            { name: "Bangalore", x: 10, y: 5 },
+            { name: "Hyderabad", x: 14, y: 10 },
+            { name: "Coimbatore", x: 6, y: 2 }
+        ],
+
+        vehicles: [
+            { name: "Truck-1", capacity: 100 },
+            { name: "Truck-2", capacity: 80 },
+            { name: "Truck-3", capacity: 60 }
+        ],
+
+        cargo: [
+            {
+                name: "Medical Supplies",
+                weight: 30,
+                priority: 10
+            },
+
+            {
+                name: "Electronics",
+                weight: 40,
+                priority: 8
+            },
+
+            {
+                name: "Food Products",
+                weight: 20,
+                priority: 9
+            },
+
+            {
+                name: "Industrial Parts",
+                weight: 50,
+                priority: 6
+            },
+
+            {
+                name: "Emergency Equipment",
+                weight: 25,
+                priority: 10
+            }
+        ],
+
+        capacity: 100
+    };
+
+
+    document.getElementById("route").innerHTML =
+        "Processing...";
+
+    try {
+
+        const response = await fetch("/optimize", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify(data)
+
+        });
+
+
+        const result = await response.json();
+
+
+        displayResults(result);
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        alert("Optimization failed");
+
+    }
+
+}
+
+
+function displayResults(result) {
+
+
+    document.getElementById("route").innerHTML = `
+
+        <div class="result-item">
+
+            <strong>Route:</strong>
+            ${result.route.route.join(" → ")}
+
+        </div>
+
+        <div class="result-item">
+
+            <strong>Total Distance:</strong>
+            ${result.route.total_distance}
+
+        </div>
+
+    `;
+
+
+    let vehicleHTML = "";
+
+    result.vehicle_allocation.allocations.forEach(item => {
+
+        vehicleHTML += `
+
+            <div class="result-item">
+
+                ${item.cargo}
+                →
+                ${item.vehicle}
+
+                (${item.weight} kg)
+
+            </div>
+
+        `;
+
+    });
+
+
+    document.getElementById("vehicles").innerHTML =
+        vehicleHTML;
+
+
+    document.getElementById("cargo").innerHTML = `
+
+        <div class="result-item">
+
+            <strong>Selected Cargo:</strong>
+
+            ${result.cargo_optimization.selected_cargo.join(", ")}
+
+        </div>
+
+        <div class="result-item">
+
+            <strong>Maximum Priority Value:</strong>
+
+            ${result.cargo_optimization.maximum_value}
+
+        </div>
+
+        <div class="result-item">
+
+            <strong>Total Weight:</strong>
+
+            ${result.cargo_optimization.total_weight} kg
+
+        </div>
+
+    `;
+
+
+    let scheduleHTML = "";
+
+    result.schedule.forEach(item => {
+
+        scheduleHTML += `
+
+            <div class="result-item">
+
+                ${item.order}.
+                ${item.cargo}
+
+                (Priority: ${item.priority})
+
+            </div>
+
+        `;
+
+    });
+
+
+    document.getElementById("schedule").innerHTML =
+        scheduleHTML;
+
+
+    document.getElementById("performance").innerHTML = `
+
+        <div class="result-item">
+
+            <strong>Execution Time:</strong>
+
+            ${result.execution_time_ms} ms
+
+        </div>
+
+        <div class="result-item">
+
+            Algorithms Used:
+
+            <ul>
+
+                <li>Greedy Algorithm</li>
+
+                <li>Nearest Neighbor</li>
+
+                <li>Dynamic Programming</li>
+
+                <li>Priority Scheduling</li>
+
+            </ul>
+
+        </div>
+
+    `;
+
+}
+10. requirements.txt
+Flask==3.0.3
